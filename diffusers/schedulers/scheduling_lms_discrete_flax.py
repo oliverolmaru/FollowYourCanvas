@@ -34,7 +34,7 @@ class LMSDiscreteSchedulerState:
     num_inference_steps: Optional[int] = None
     timesteps: Optional[jnp.ndarray] = None
     sigmas: Optional[jnp.ndarray] = None
-    derivatives: jnp.ndarray = jnp.array([])
+    derivatives: Optional[jnp.ndarray] = None
 
     @classmethod
     def create(cls, num_train_timesteps: int, sigmas: jnp.ndarray):
