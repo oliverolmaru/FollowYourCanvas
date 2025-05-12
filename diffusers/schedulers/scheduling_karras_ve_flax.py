@@ -18,7 +18,7 @@ from typing import Optional, Tuple, Union
 
 import flax
 import jax.numpy as jnp
-from jax import random
+from jax import random, Array
 
 from ..configuration_utils import ConfigMixin, register_to_config
 from ..utils import BaseOutput
@@ -139,7 +139,7 @@ class FlaxKarrasVeScheduler(FlaxSchedulerMixin, ConfigMixin):
         state: KarrasVeSchedulerState,
         sample: jnp.ndarray,
         sigma: float,
-        key: random.KeyArray,
+        key: Array,
     ) -> Tuple[jnp.ndarray, float]:
         """
         Explicit Langevin-like "churn" step of adding noise to the sample according to a factor gamma_i ≥ 0 to reach a

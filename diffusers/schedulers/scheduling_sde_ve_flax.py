@@ -19,7 +19,7 @@ from typing import Optional, Tuple, Union
 
 import flax
 import jax.numpy as jnp
-from jax import random
+from jax import random, Array
 
 from ..configuration_utils import ConfigMixin, register_to_config
 from .scheduling_utils_flax import FlaxSchedulerMixin, FlaxSchedulerOutput, broadcast_to_shape_from_left
@@ -166,7 +166,7 @@ class FlaxScoreSdeVeScheduler(FlaxSchedulerMixin, ConfigMixin):
         model_output: jnp.ndarray,
         timestep: int,
         sample: jnp.ndarray,
-        key: random.KeyArray,
+        key: Array,
         return_dict: bool = True,
     ) -> Union[FlaxSdeVeOutput, Tuple]:
         """
@@ -225,7 +225,7 @@ class FlaxScoreSdeVeScheduler(FlaxSchedulerMixin, ConfigMixin):
         state: ScoreSdeVeSchedulerState,
         model_output: jnp.ndarray,
         sample: jnp.ndarray,
-        key: random.KeyArray,
+        key: Array,
         return_dict: bool = True,
     ) -> Union[FlaxSdeVeOutput, Tuple]:
         """

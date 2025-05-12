@@ -20,7 +20,7 @@ from typing import Optional, Tuple, Union
 
 import flax
 import jax.numpy as jnp
-from jax import random
+from jax import random, Array
 
 from ..configuration_utils import ConfigMixin, FrozenDict, register_to_config
 from ..utils import deprecate
@@ -213,7 +213,7 @@ class FlaxDDPMScheduler(FlaxSchedulerMixin, ConfigMixin):
         model_output: jnp.ndarray,
         timestep: int,
         sample: jnp.ndarray,
-        key: random.KeyArray,
+        key: Array,
         return_dict: bool = True,
         **kwargs,
     ) -> Union[FlaxDDPMSchedulerOutput, Tuple]:
