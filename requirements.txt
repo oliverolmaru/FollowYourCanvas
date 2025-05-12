@@ -5,7 +5,7 @@
 #numpy==1.23.5
 pytorch-extension==0.2
 segment-anything @ git+https://github.com/facebookresearch/segment-anything.git@6fdee8f2727f4506cfbbe553e23b895e27956588
-tb-nightly==2.14.0a20230808
+#tb-nightly==2.14.0a20230808
 #tensorboard==2.19.0
 #tensorboard-data-server==0.7.2
 tensorboardX==2.6.2.2
@@ -18,4 +18,4 @@ tiktoken==0.7.0
 transformers-stream-generator==0.0.5
 #triton==3.2.0
 #wandb==0.17.7
-xformers==0.0.27.post2
+xformers==0.0.29.post2
