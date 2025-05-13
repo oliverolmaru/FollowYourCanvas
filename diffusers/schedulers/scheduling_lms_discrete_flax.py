@@ -14,7 +14,7 @@
 
 from dataclasses import dataclass
 from typing import Optional, Tuple, Union
-
+from dataclasses import field # Import field
 import flax
 import jax.numpy as jnp
 from scipy import integrate
@@ -34,7 +34,7 @@ class LMSDiscreteSchedulerState:
     num_inference_steps: Optional[int] = None
     timesteps: Optional[jnp.ndarray] = None
     sigmas: Optional[jnp.ndarray] = None
-    derivatives: Optional[jnp.ndarray] = None
+    derivatives: Optional[jnp.ndarray] = field(default_factory=lambda: jnp.array([]))
 
     @classmethod
     def create(cls, num_train_timesteps: int, sigmas: jnp.ndarray):
