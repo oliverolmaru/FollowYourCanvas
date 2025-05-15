@@ -159,7 +159,8 @@ def main(
     text_encoder = CLIPTextModel.from_pretrained(pretrained_model_path, subfolder="text_encoder", torch_dtype=torch.bfloat16)
 
     lmm_tokenizer = AutoTokenizer.from_pretrained(lmm_path, trust_remote_code=True)
-    lmm_model = AutoModelForCausalLM.from_pretrained(lmm_path, device_map="cuda", trust_remote_code=True).eval()
+    # TODO - if you want to have prompt enabled, you need to comment in this line again
+    lmm_model = None #AutoModelForCausalLM.from_pretrained(lmm_path, device_map="cuda", trust_remote_code=True).eval()
 
     unet = UNet3DConditionModel.from_pretrained_2d(
         pretrained_model_path, subfolder="unet",
