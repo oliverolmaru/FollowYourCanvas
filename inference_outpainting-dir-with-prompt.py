@@ -83,9 +83,9 @@ def get_prompt(frame, lmm_tokenizer, lmm_model):
     prompt, _ = lmm_model.chat(lmm_tokenizer, query=query, history=None)
     prompt = prompt.replace('The image shows', '').strip()
     print(f'=> Get new prompt: {prompt}')
-    
+
     return prompt
-    
+
 def main(
     name: str,
     output_dir: str,
@@ -141,7 +141,7 @@ def main(
     os.makedirs(output_dir, exist_ok=True)
     os.makedirs(f"{output_dir}/samples", exist_ok=True)
     OmegaConf.save(config, os.path.join(output_dir, 'config.yaml'))
-        
+
     image_encoder=None
     if use_ip_plus_cross_attention:
         if image_encoder_name == 'SAM':
@@ -154,44 +154,45 @@ def main(
         print(f'load image encoder: {image_pretrained_model_path}')
 
     vae = AutoencoderKL.from_pretrained(pretrained_model_path, subfolder="vae", torch_dtype=torch.bfloat16)
-        
+
     tokenizer    = CLIPTokenizer.from_pretrained(pretrained_model_path, subfolder="tokenizer")
-    text_encoder = CLIPTextModel.from_pretrained(pretrained_model_path, subfolder="text_encoder")
+    text_encoder = CLIPTextModel.from_pretrained(pretrained_model_path, subfolder="text_encoder", torch_dtype=torch.bfloat16)
 
     lmm_tokenizer = AutoTokenizer.from_pretrained(lmm_path, trust_remote_code=True)
     lmm_model = AutoModelForCausalLM.from_pretrained(lmm_path, device_map="cuda", trust_remote_code=True).eval()
 
     unet = UNet3DConditionModel.from_pretrained_2d(
-        pretrained_model_path, subfolder="unet", 
-        unet_additional_kwargs=OmegaConf.to_container(unet_additional_kwargs)
+        pretrained_model_path, subfolder="unet",
+        torch_dtype=torch.bfloat16,
+        unet_additional_kwargs=OmegaConf.to_container(unet_additional_kwargs),
     )
     noise_scheduler = DDIMScheduler(**OmegaConf.to_container(noise_scheduler_kwargs))
     noise_scheduler_train = DDPMScheduler(**OmegaConf.to_container(noise_scheduler_kwargs))
 
     if motion_pretrained_model_path!="":
         logging.info(f"from motion pretreained checkpoint: {motion_pretrained_model_path}")
-    
+
         # motion model keys: 'epoch', 'global_step', 'state_dict'
         motion_pretrained_model_path = torch.load(motion_pretrained_model_path, map_location="cpu")
 
         if "global_step" in motion_pretrained_model_path: zero_rank_print(f"global_step: {motion_pretrained_model_path['global_step']}")
         state_dict = motion_pretrained_model_path["state_dict"] if "state_dict" in motion_pretrained_model_path else motion_pretrained_model_path
         new_state_dict = {}
-        
+
         for k, v in state_dict.items():
             new_state_dict[k.replace('module.', '')] = v
-            
+
         m, u = unet.load_state_dict(new_state_dict, strict=False)
         logging.info(f"missing keys: {len(m)}, unexpected keys: {len(u)}")
         logging.info(f"missing keys: {m}, \n unexpected keys: {u}")
 
-        
+
     # Freeze vae and text_encoder
     vae.requires_grad_(False)
     text_encoder.requires_grad_(False)
     # Set unet trainable parameters
 
-    
+
     # Enable xformers
     if enable_xformers_memory_efficient_attention:
         if is_xformers_available():
@@ -202,17 +203,17 @@ def main(
     # Move models to GPU
     vae.to(device)
     text_encoder.to(device)
-        
-    
+
+
     # Get the dataset
     logging.info("***** Loading Data *****")
-    
+
 
     # Validation pipeline
     validation_pipeline = AnimationPipeline(
         unet=unet, vae=vae, tokenizer=tokenizer, text_encoder=text_encoder, scheduler=noise_scheduler, image_encoder=image_encoder, image_encoder_name=image_encoder_name
     ).to("cuda")
-        
+
     validation_pipeline.enable_vae_slicing()
     pixel_transforms = transforms.Compose([transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5], inplace=True)])
     # DDP warpper
@@ -228,7 +229,7 @@ def main(
         generator = torch.Generator(device=device)
         # get different seed for each validation round
         generator.manual_seed(global_seed+re)
-        
+
         (height_tile, width_tile) = anchor_target_sampling.target_size
         print(f'multi diff window size: {width_tile}, {height_tile} ')
 
@@ -240,7 +241,7 @@ def main(
         frames = video_reader.get_batch(numbers)
         video_batch_val["pixel_values"] = pixel_transforms(torch.from_numpy(frames.asnumpy().transpose(0,3,1,2)) / 255.)
         video_batch_val['video_length'] = 64
-        
+
         prompts = None
 
         # -----------------------------------------------------------------
@@ -281,7 +282,7 @@ def main(
                         validate_overlap = None if outpainting_round>0 or not use_multi_diff else validate_overlap,
                         round=outpainting_round,
                         lmm_tokenizer=lmm_tokenizer,
-                        lmm_model=lmm_model, 
+                        lmm_model=lmm_model,
                         **validation_data,
                     ).videos
                 if use_outpaint:
@@ -294,10 +295,10 @@ def main(
 
                 print (f'{sidx}-{prompts[sidx]}')
                 sub_samples = []
-                
+
                 if use_outpaint:
                     sub_samples.append(video_split.cpu()[sidx].unsqueeze(0))
-                    
+
                 sample_num = len(sub_samples)
                 sub_samples = torch.concat(sub_samples)
                 save_path = f"{output_dir}/samples{video_name}-fps-{fps_tensor[sidx]}-{prompts[:10].replace('/', ' ')}-{n_frames}f-{outpainting_round}{re}.gif"
@@ -308,7 +309,7 @@ def main(
                     save_videos_grid(sub_samples, save_path[:-4] + '.mp4', n_rows=sample_num, n_frames=video_length)
                 except:
                     print('\n\n=> no space on device!\n\n')
-                
+
                 if videos_overlap is not None:
                     sub_samples = []
                     for video_overlap in videos_overlap:
