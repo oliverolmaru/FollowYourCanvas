@@ -164,7 +164,6 @@ def main(
 
     unet = UNet3DConditionModel.from_pretrained_2d(
         pretrained_model_path, subfolder="unet",
-        torch_dtype=torch.bfloat16,
         unet_additional_kwargs=OmegaConf.to_container(unet_additional_kwargs),
     )
     noise_scheduler = DDIMScheduler(**OmegaConf.to_container(noise_scheduler_kwargs))
